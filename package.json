@@ -1,6 +1,6 @@
 {
   "name": "shopfleet",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Multi-store Shopify CLI",
   "type": "module",
   "bin": {
@@ -21,6 +21,10 @@
     "cli",
     "graphql"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/supertowrs/shopify-admin-cli.git"
+  },
   "license": "MIT",
   "dependencies": {
     "chalk": "^5.6.2",

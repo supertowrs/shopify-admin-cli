@@ -1,0 +1,99 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install npm with OIDC support
+        run: npm install --global npm@11.11.1
+
+      - name: Read package metadata
+        id: package
+        run: |
+          echo "name=$(node -p "require('./package.json').name")" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether the version is already published
+        id: registry
+        shell: bash
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          set +e
+          output="$(npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --json 2>&1)"
+          status=$?
+          set -e
+
+          if [ "$status" -eq 0 ]; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "${PACKAGE_NAME}@${PACKAGE_VERSION} is already published; skipping publication."
+          elif [[ "$output" == *"E404"* ]]; then
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "${PACKAGE_NAME}@${PACKAGE_VERSION} is not published yet."
+          else
+            echo "$output" >&2
+            exit "$status"
+          fi
+
+      - name: Install dependencies
+        if: steps.registry.outputs.published == 'false'
+        run: npm ci
+
+      - name: Run tests
+        if: steps.registry.outputs.published == 'false'
+        run: npm test
+
+      - name: Validate types
+        if: steps.registry.outputs.published == 'false'
+        run: npm run typecheck
+
+      - name: Build package
+        if: steps.registry.outputs.published == 'false'
+        run: npm run build
+
+      - name: Inspect package contents
+        if: steps.registry.outputs.published == 'false'
+        run: npm pack --dry-run
+
+      - name: Publish package
+        if: steps.registry.outputs.published == 'false'
+        run: npm publish --access public
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.package.outputs.version }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; skipping creation."
+            exit 0
+          fi
+
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --generate-notes
