@@ -16,6 +16,7 @@ import { registerInventoryCommands } from "./commands/inventory.js";
 import { registerMetafieldCommands } from "./commands/metafields.js";
 import { registerOrderCommands } from "./commands/orders.js";
 import { registerProductCommands } from "./commands/products.js";
+import { registerPublicationCommands } from "./commands/publications.js";
 import { registerShopCommands } from "./commands/shop.js";
 
 const program = new Command();
@@ -30,6 +31,7 @@ registerConfigCommands(program);
 registerShopCommands(program);
 registerAnalyticsCommands(program);
 registerProductCommands(program);
+registerPublicationCommands(program);
 registerOrderCommands(program);
 registerCustomerCommands(program);
 registerGiftCardCommands(program);

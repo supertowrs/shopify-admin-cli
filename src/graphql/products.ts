@@ -275,6 +275,20 @@ export const PRODUCT_UPDATE_MUTATION = `
   }
 `;
 
+export const PRODUCT_PUBLISH_MUTATION = `
+  mutation ProductPublish($id: ID!, $publicationId: ID!) {
+    publishablePublish(id: $id, input: { publicationId: $publicationId }) {
+      publishable {
+        publishedOnPublication(publicationId: $publicationId)
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
 export const PRODUCT_DELETE_MUTATION = `
   mutation ProductDelete($input: ProductDeleteInput!, $synchronous: Boolean!) {
     productDelete(input: $input, synchronous: $synchronous) {

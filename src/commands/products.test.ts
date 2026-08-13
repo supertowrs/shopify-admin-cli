@@ -123,11 +123,12 @@ describe("parseProductSortKey", () => {
 describe("parseProductStatus", () => {
   it("normalizes valid statuses", () => {
     expect(parseProductStatus("draft")).toBe("DRAFT");
+    expect(parseProductStatus("unlisted")).toBe("UNLISTED");
   });
 
   it("rejects invalid statuses", () => {
     expect(() => parseProductStatus("published")).toThrow(
-      'Invalid --status value "published". Valid values: active, archived, draft.',
+      'Invalid --status value "published". Valid values: active, archived, draft, unlisted.',
     );
   });
 });

@@ -14,6 +14,7 @@ Available commands and capabilities:
 - `products search`
 - `products create`
 - `products update`
+- `products publish`
 - `products variants update`
 - `products delete`
 - `orders list`
@@ -46,6 +47,8 @@ Available commands and capabilities:
 - `collections get`
 - `collections products`
 - `collections update`
+- `collections add-products`
+- `publications list`
 - `fulfillment list`
 - `fulfillment create`
 - `fulfillment tracking`
@@ -167,7 +170,7 @@ Shopfleet uses `clientId` and `clientSecret` for new apps. It requests an Admin 
 Recommended Admin API scopes:
 
 ```text
-write_products, write_orders, read_all_orders, write_customers, write_inventory, write_discounts, read_assigned_fulfillment_orders, write_assigned_fulfillment_orders, read_merchant_managed_fulfillment_orders, write_merchant_managed_fulfillment_orders, read_third_party_fulfillment_orders, write_third_party_fulfillment_orders, write_gift_cards, write_content, write_draft_orders, write_metaobject_definitions, write_metaobjects, write_online_store_navigation, read_price_rules, read_reports, read_locations, read_markets, read_themes
+write_products, read_publications, write_publications, write_orders, read_all_orders, write_customers, write_inventory, write_discounts, read_assigned_fulfillment_orders, write_assigned_fulfillment_orders, read_merchant_managed_fulfillment_orders, write_merchant_managed_fulfillment_orders, read_third_party_fulfillment_orders, write_third_party_fulfillment_orders, write_gift_cards, write_content, write_draft_orders, write_metaobject_definitions, write_metaobjects, write_online_store_navigation, read_price_rules, read_reports, read_locations, read_markets, read_themes
 ```
 
 Metafields do not use separate `read_metafields` or `write_metafields` Admin API scopes.
@@ -204,7 +207,10 @@ shopfleet products get gid://shopify/Product/1234567890
 shopfleet products get 1234567890
 shopfleet products get paso-macarena-miniatura --handle
 shopfleet products create --title "Test product" --status draft
+shopfleet products update 1234567890 --status unlisted
 shopfleet products update 1234567890 --category sg-4-17-2-17
+shopfleet publications list
+shopfleet products publish 1234567890 --publication 987654321
 shopfleet products variants update 1234567890 --sku MINI-001 --price 39.95
 shopfleet products delete 1234567890 --force
 shopfleet orders list --limit 10
@@ -237,6 +243,7 @@ shopfleet collections list --limit 10
 shopfleet collections get 1234567890 --format table
 shopfleet collections products 1234567890 --limit 10
 shopfleet collections update 1234567890 --title "Holy Week 2026"
+shopfleet collections add-products 1234567890 987654321
 shopfleet fulfillment list --limit 10
 shopfleet fulfillment create --order-id 1234567890
 shopfleet fulfillment tracking 255858046 --tracking-number 1Z9999999999999999
@@ -279,7 +286,9 @@ shopfleet products create --title "Test product" --seo-title "Buy Test product o
 shopfleet products update 1234567890 --category sg-4-17-2-17
 shopfleet products update 1234567890 --clear-category
 shopfleet products update my-product --handle --status draft --new-handle my-updated-product
+shopfleet products update 1234567890 --status unlisted
 shopfleet products update 1234567890 --seo-title "New SEO title" --seo-description "Updated search snippet"
+shopfleet products publish 1234567890 --publication 987654321
 shopfleet products variants update 1234567890 --sku MINI-001 --price 39.95 --compare-at-price 49.95
 shopfleet products variants update 1234567890 --tracked false --requires-shipping false --cost 12.50
 shopfleet products variants update 1234567890 --metafield custom.material:single_line_text_field:resin
@@ -289,8 +298,22 @@ shopfleet products delete my-updated-product --handle --force
 For category-aware workflows, `--category` accepts either a taxonomy category GID or a raw taxonomy category ID such as `sg-4-17-2-17`. Use `--clear-category` to remove the current category, and `--delete-conflicting-metafields` when Shopify requires constrained metafields to be cleared during a category change.
 
 Product write commands support top-level product fields, including optional `--seo-title`, `--seo-description`, and taxonomy category assignment.
+Product status accepts `active`, `draft`, `archived`, and `unlisted`. An unlisted product stays directly addressable without appearing in storefront search, collections, recommendations, or sitemap output.
+Use `products publish` to make an active product available on one publication. The command accepts a product GID or numeric ID, or a handle with `--handle`, and requires a publication GID or numeric ID from `publications list`.
 Use `products variants update` for variant pricing, barcode, tax fields, metafields, and linked inventory item metadata such as SKU, tracked, shipping, cost, and origin codes.
 Inventory quantity changes live under the dedicated `inventory` command group.
+
+## Publications
+
+`publications list` returns the sales channel publications visible to the configured Shopify app, including their GIDs. Use the target publication GID with `products publish`.
+
+```bash
+shopfleet publications list
+shopfleet publications list --format json
+shopfleet products publish 1234567890 --publication gid://shopify/Publication/987654321
+```
+
+The Shopify app requires `read_publications` to list publications and `write_publications` to publish products. Publication catalog metadata also requires product read access, which the recommended `write_products` scope includes. If these scopes are added to an existing app version, release the version and approve the updated access on the store before using the commands.
 
 ## Metafields
 
@@ -549,17 +572,20 @@ shopfleet collections list --query 'title:miniatura'
 `collections get` accepts a Shopify collection GID or numeric collection ID.
 `collections products` lists products inside the target collection with manual pagination.
 `collections update` edits top-level collection fields such as title, HTML description, handle, SEO fields, sort order, and template suffix.
+`collections add-products` adds one or more products to a custom collection. It accepts collection and product GIDs or numeric IDs.
 
 ```bash
 shopfleet collections update 1234567890 --title "Holy Week 2026"
 shopfleet collections update 1234567890 --description "<p>Featured collection</p>"
 shopfleet collections update 1234567890 --handle holy-week-2026 --redirect-new-handle
 shopfleet collections update 1234567890 --seo-title "Holy Week" --seo-description "Featured collection" --template-suffix seasonal
+shopfleet collections add-products 1234567890 987654321 987654322
 ```
 
 Changing the title does not change the handle automatically.
 Use `--redirect-new-handle` only together with `--handle`.
 This update command focuses on top-level collection fields and does not edit smart collection rules, images, or metafields.
+Shopify rejects explicit product membership changes for smart collections. The add operation is atomic: if any supplied product is already a member, Shopify rejects the full request.
 
 ## Discounts
 

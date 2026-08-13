@@ -38,7 +38,7 @@ Store config lives at `~/.shopfleet/stores.json` and the CLI migrates from `~/.s
 
 - Read-only task: `shop info`, list/get/search commands, metafield reads, analytics, and other non-mutating reads are generally safe on an existing configured alias.
 - Local config task: `config add`, `config remove`, `config set-default`, and config migration work can be tested locally without touching Shopify if you use fake credentials.
-- Write task: product create/update/delete, product variant updates, collection updates, order cancel, gift card create, page create, blog article create, refund, inventory adjust/set, metafield set/delete, fulfillment create/tracking, and discount create all mutate store data. Production use is valid, but these commands should be executed deliberately against the intended alias.
+- Write task: product create/update/publish/delete, product variant updates, collection updates and membership changes, order cancel, gift card create, page create, blog article create, refund, inventory adjust/set, metafield set/delete, fulfillment create/tracking, and discount create all mutate store data. Production use is valid, but these commands should be executed deliberately against the intended alias.
 
 ### 3. Choose the safest validation path
 
@@ -79,6 +79,8 @@ Prefer `--format table` when you want concise terminal inspection and `--format 
 - The CLI talks to Shopify Admin GraphQL and keeps analytics read-only through ShopifyQL.
 - Shopify taxonomy categories are read-only references from Shopify; product commands may assign, filter, or clear a product category, but they do not mutate the taxonomy itself.
 - Collection title changes do not change the handle automatically; handle updates should be explicit and may optionally request a redirect.
+- Product status supports `UNLISTED` on the pinned Admin API. Publishing a product requires active status, a publication ID, and `write_publications`.
+- Listing publications requires `read_publications`, while its catalog metadata also needs product read access. Explicit collection membership changes only work for custom collections and require `write_products`.
 - The config layer normalizes domains and requires the Shopify admin domain in `*.myshopify.com` format.
 
 ## Editing Workflow

@@ -11,6 +11,7 @@ import {
   PRODUCT_DELETE_MUTATION,
   PRODUCT_GET_QUERY,
   PRODUCT_GET_WITH_MEDIA_QUERY,
+  PRODUCT_PUBLISH_MUTATION,
   PRODUCT_VARIANT_GET_QUERY,
   PRODUCT_VARIANTS_BULK_UPDATE_MUTATION,
   PRODUCT_UPDATE_MUTATION,
@@ -24,6 +25,7 @@ import type {
   ProductVariantItem,
 } from "../types.js";
 import { printJson, printOutput, printTable } from "../utils/output.js";
+import { normalizePublicationId } from "./publications.js";
 
 const PRODUCT_SORT_KEYS = [
   "CREATED_AT",
@@ -161,6 +163,12 @@ interface ProductDeleteOptions {
   handle?: boolean;
 }
 
+interface ProductPublishOptions {
+  format: OutputFormat;
+  handle?: boolean;
+  publication: string;
+}
+
 interface ProductVariantDetails extends ProductVariantItem {
   product: {
     handle: string;
@@ -254,6 +262,15 @@ interface ProductDeleteResponse {
   };
 }
 
+interface ProductPublishResponse {
+  publishablePublish: {
+    publishable: {
+      publishedOnPublication: boolean;
+    } | null;
+    userErrors: GraphQlUserError[];
+  };
+}
+
 export function registerProductCommands(program: Command): void {
   const products = program
     .command("products")
@@ -271,7 +288,10 @@ export function registerProductCommands(program: Command): void {
     )
     .option("--vendor <vendor>", "Filter by vendor")
     .option("--type <productType>", "Filter by product type")
-    .option("--status <status>", "Filter by status: active, draft or archived")
+    .option(
+      "--status <status>",
+      "Filter by status: active, draft, archived or unlisted",
+    )
     .option("--tag <tag>", "Filter by tag")
     .option(
       "--sort <sortKey>",
@@ -310,7 +330,10 @@ Notes:
     )
     .option("--vendor <vendor>", "Filter by vendor")
     .option("--type <productType>", "Filter by product type")
-    .option("--status <status>", "Filter by status: active, draft or archived")
+    .option(
+      "--status <status>",
+      "Filter by status: active, draft, archived or unlisted",
+    )
     .option("--tag <tag>", "Filter by tag")
     .option("--reverse", "Reverse sort order")
     .option("--format <format>", "table or json", "table")
@@ -419,7 +442,10 @@ Notes:
     .option("--vendor <vendor>", "Vendor")
     .option("--type <productType>", "Product type")
     .option("--tags <tags>", "Comma-separated tags")
-    .option("--status <status>", "Product status: active, draft or archived")
+    .option(
+      "--status <status>",
+      "Product status: active, draft, archived or unlisted",
+    )
     .option("--format <format>", "table or json", "json")
     .addHelpText(
       "after",
@@ -478,7 +504,10 @@ Notes:
     .option("--vendor <vendor>", "Vendor")
     .option("--type <productType>", "Product type")
     .option("--tags <tags>", "Comma-separated tags")
-    .option("--status <status>", "Product status: active, draft or archived")
+    .option(
+      "--status <status>",
+      "Product status: active, draft, archived or unlisted",
+    )
     .option("--format <format>", "table or json", "json")
     .addHelpText(
       "after",
@@ -519,6 +548,73 @@ Notes:
         }
 
         printProductMutationResult(data.productUpdate.product, options.format);
+      },
+    );
+
+  products
+    .command("publish")
+    .description("Publish a product to one Shopify publication")
+    .argument("<idOrHandle>", "Product GID, numeric ID or handle")
+    .requiredOption(
+      "--publication <id>",
+      "Publication GID or numeric publication ID",
+    )
+    .option("--handle", "Treat the product argument as a handle")
+    .option("--format <format>", "table or json", "json")
+    .addHelpText(
+      "after",
+      `
+Context:
+  Makes one product available through a specific Shopify publication.
+
+Examples:
+  shopfleet products publish 1234567890 --publication 987654321
+  shopfleet products publish gid://shopify/Product/1234567890 --publication gid://shopify/Publication/987654321
+  shopfleet products publish my-product-handle --handle --publication 987654321
+
+Notes:
+  Find the target publication ID with shopfleet publications list.
+  The product must have active status before it can be published.
+  The configured Shopify app requires the write_publications access scope.
+      `,
+    )
+    .action(
+      async (idOrHandle: string, options: ProductPublishOptions, command: Command) => {
+        const storeAlias = command.optsWithGlobals().store as string | undefined;
+        const store = await resolveStore(storeAlias);
+        const client = new ShopifyClient({ store });
+        const productId = await resolveProductReference(
+          client,
+          idOrHandle,
+          Boolean(options.handle),
+        );
+        const publicationId = normalizePublicationId(options.publication);
+        const data = await client.query<ProductPublishResponse>({
+          query: PRODUCT_PUBLISH_MUTATION,
+          variables: {
+            id: productId,
+            publicationId,
+          },
+        });
+
+        assertNoUserErrors(data.publishablePublish.userErrors);
+
+        if (!data.publishablePublish.publishable?.publishedOnPublication) {
+          throw new Error("Shopify did not confirm the product publication.");
+        }
+
+        const result = {
+          productId,
+          publicationId,
+          published: true,
+        };
+
+        if (options.format === "json") {
+          printJson(result);
+          return;
+        }
+
+        printTable([result], ["productId", "publicationId", "published"]);
       },
     );
 
@@ -1117,9 +1213,9 @@ export function parseProductStatus(status?: string): string | undefined {
 
   const normalized = status.trim().toUpperCase();
 
-  if (!["ACTIVE", "ARCHIVED", "DRAFT"].includes(normalized)) {
+  if (!["ACTIVE", "ARCHIVED", "DRAFT", "UNLISTED"].includes(normalized)) {
     throw new Error(
-      `Invalid --status value "${status}". Valid values: active, archived, draft.`,
+      `Invalid --status value "${status}". Valid values: active, archived, draft, unlisted.`,
     );
   }
 
