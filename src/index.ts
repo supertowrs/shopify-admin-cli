@@ -2,6 +2,7 @@
 
 import chalk from "chalk";
 import { Command } from "commander";
+import packageJson from "../package.json" with { type: "json" };
 
 import { registerAnalyticsCommands } from "./commands/analytics.js";
 import { registerCollectionCommands } from "./commands/collections.js";
@@ -24,7 +25,7 @@ const program = new Command();
 program
   .name("shopfleet")
   .description("Private CLI for managing Shopify stores")
-  .version("0.1.9")
+  .version(packageJson.version)
   .option("--store <alias>", "Configured store alias");
 
 registerConfigCommands(program);
