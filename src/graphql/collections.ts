@@ -128,3 +128,23 @@ export const COLLECTION_UPDATE_MUTATION = `
     }
   }
 `;
+
+export const COLLECTION_ADD_PRODUCTS_MUTATION = `
+  mutation CollectionAddProducts($id: ID!, $productIds: [ID!]!) {
+    collectionAddProducts(id: $id, productIds: $productIds) {
+      collection {
+        id
+        title
+        handle
+        productsCount {
+          count
+          precision
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;

@@ -20,6 +20,7 @@ The current top-level groups are:
 - `shop`
 - `analytics`
 - `products`
+- `publications`
 - `orders`
 - `customers`
 - `gift-cards`
@@ -44,7 +45,7 @@ The current top-level groups are:
 
 Use command help to confirm exact input, but these rules are important:
 
-- `products get|update|delete` accept a product GID or numeric product ID by default. Use `--handle` to treat the argument as a handle.
+- `products get|update|publish|delete` accept a product GID or numeric product ID by default. Use `--handle` to treat the argument as a handle.
 - `products get --include-media` adds `descriptionHtml` and up to 10 product images with metadata. Without that flag, keep the response lightweight.
 - `products variants update` accepts a product variant GID or numeric variant ID.
 - `products list|search --category` accept a taxonomy category GID or raw taxonomy category ID and map it to Shopify's `category_id` search filter.
@@ -52,12 +53,16 @@ Use command help to confirm exact input, but these rules are important:
 - `products update --clear-category` removes the current product category.
 - `products update --delete-conflicting-metafields` is only valid when the category is changing or being cleared.
 - `products create|update` accept optional `--seo-title` and `--seo-description` values that map to Shopify product SEO fields.
+- `products create|update --status` accept `active`, `draft`, `archived`, or `unlisted`.
+- `products publish --publication` accepts a publication GID or numeric publication ID returned by `publications list`.
 - `orders get|transactions|cancel` accept an order GID or numeric order ID.
 - `customers get|orders` accept a customer GID or numeric customer ID.
 - `gift-cards get` accepts a gift card GID or numeric ID.
-- `collections get|products|update` accept a collection GID or numeric ID.
+- `collections get|products|update|add-products` accept a collection GID or numeric ID.
 - `collections update` edits top-level collection fields such as title, HTML description, handle, SEO, sort order, and template suffix.
 - `collections update --redirect-new-handle` is only valid when `--handle` is also present.
+- `collections add-products` accepts one or more product GIDs or numeric product IDs and only works with custom collections.
+- `publications list` requires `read_publications` plus product read access for catalog metadata; `products publish` requires `write_publications`.
 - `inventory adjust --item-id` expects an inventory item GID or numeric ID.
 - `inventory adjust --location-id` expects a location GID or numeric ID.
 - `inventory set --item-id` expects an inventory item GID or numeric ID.
@@ -74,9 +79,11 @@ These commands mutate Shopify data and should be treated as real store operation
 
 - `products create`
 - `products update`
+- `products publish`
 - `products variants update`
 - `products delete`
 - `collections update`
+- `collections add-products`
 - `orders cancel`
 - `gift-cards create`
 - `pages create`
@@ -95,6 +102,8 @@ Notes:
 - `orders cancel` is explicitly destructive and requires `--force`.
 - `products delete` also requires careful confirmation because it removes catalog data.
 - `collections update` changes live storefront/admin collection metadata and should be treated like a real catalog edit.
+- `collections add-products` changes live custom collection membership. Shopify rejects the full request if any supplied product is already a member.
+- `products publish` makes an active product available on the selected sales channel publication.
 - Product categories come from Shopify taxonomy and are assigned to products; the CLI does not create or edit taxonomy categories themselves.
 - `products variants update` splits writes between product variant fields and the linked inventory item when needed.
 - `discounts create` requires exactly one of `--percentage` or `--amount`.

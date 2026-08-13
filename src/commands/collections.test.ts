@@ -4,6 +4,7 @@ import {
   buildCollectionUpdateInput,
   buildCollectionSearchQuery,
   normalizeCollectionId,
+  normalizeCollectionProductIds,
   parseCollectionProductSortKey,
   parseCollectionSortKey,
   parseCollectionUpdateSortOrder,
@@ -23,6 +24,26 @@ describe("normalizeCollectionId", () => {
   it("rejects unsupported values", () => {
     expect(() => normalizeCollectionId("miniaturas")).toThrow(
       "Expected a collection GID or numeric collection ID.",
+    );
+  });
+});
+
+describe("normalizeCollectionProductIds", () => {
+  it("accepts product gids and converts numeric ids", () => {
+    expect(
+      normalizeCollectionProductIds(["gid://shopify/Product/123", "456"]),
+    ).toEqual(["gid://shopify/Product/123", "gid://shopify/Product/456"]);
+  });
+
+  it("requires at least one product", () => {
+    expect(() => normalizeCollectionProductIds([])).toThrow(
+      "Pass at least one product GID or numeric product ID.",
+    );
+  });
+
+  it("rejects unsupported product references", () => {
+    expect(() => normalizeCollectionProductIds(["my-product"])).toThrow(
+      "Expected product GIDs or numeric product IDs.",
     );
   });
 });

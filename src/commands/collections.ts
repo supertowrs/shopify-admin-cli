@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { ShopifyClient } from "../client.js";
 import { resolveStore } from "../config.js";
 import {
+  COLLECTION_ADD_PRODUCTS_MUTATION,
   COLLECTION_GET_QUERY,
   COLLECTION_PRODUCTS_QUERY,
   COLLECTION_UPDATE_MUTATION,
@@ -95,6 +96,18 @@ interface CollectionUpdateResponse {
   collectionUpdate: CollectionMutationResponse;
 }
 
+interface CollectionAddProductsResponse {
+  collectionAddProducts: {
+    collection: {
+      handle: string;
+      id: string;
+      productsCount: CollectionCount;
+      title: string;
+    } | null;
+    userErrors: GraphQlUserError[];
+  };
+}
+
 interface CollectionProductsResponse {
   collection: {
     id: string;
@@ -141,6 +154,10 @@ interface CollectionProductsOptions {
   limit: string;
   reverse?: boolean;
   sort?: string;
+}
+
+interface CollectionAddProductsOptions {
+  format: OutputFormat;
 }
 
 export function registerCollectionCommands(program: Command): void {
@@ -348,6 +365,83 @@ Notes:
         }
       },
     );
+
+  collections
+    .command("add-products")
+    .description("Add one or more products to a custom collection")
+    .argument("<id>", "Collection GID or numeric ID")
+    .argument("<productIds...>", "Product GIDs or numeric product IDs")
+    .option("--format <format>", "table or json", "json")
+    .addHelpText(
+      "after",
+      `
+Context:
+  Adds explicit product membership to an existing custom collection.
+
+Examples:
+  shopfleet collections add-products 1234567890 987654321
+  shopfleet collections add-products 1234567890 987654321 987654322 --format table
+  shopfleet collections add-products gid://shopify/Collection/1234567890 gid://shopify/Product/987654321
+
+Notes:
+  The collection and product arguments accept Shopify GIDs or numeric IDs.
+  Shopify only allows explicit membership changes on custom collections, not smart collections.
+  The mutation is atomic. If any product is already in the collection, Shopify rejects the full request.
+  The configured Shopify app requires the write_products access scope.
+      `,
+    )
+    .action(
+      async (
+        id: string,
+        productIds: string[],
+        options: CollectionAddProductsOptions,
+        command: Command,
+      ) => {
+        const storeAlias = command.optsWithGlobals().store as string | undefined;
+        const store = await resolveStore(storeAlias);
+        const client = new ShopifyClient({ store });
+        const collectionId = normalizeCollectionId(id);
+        const normalizedProductIds = normalizeCollectionProductIds(productIds);
+        const data = await client.query<CollectionAddProductsResponse>({
+          query: COLLECTION_ADD_PRODUCTS_MUTATION,
+          variables: {
+            id: collectionId,
+            productIds: normalizedProductIds,
+          },
+        });
+
+        assertNoCollectionUserErrors(data.collectionAddProducts.userErrors);
+
+        if (!data.collectionAddProducts.collection) {
+          throw new Error("Shopify did not return the updated collection.");
+        }
+
+        const result = {
+          addedProductIds: normalizedProductIds,
+          collectionId: data.collectionAddProducts.collection.id,
+          handle: data.collectionAddProducts.collection.handle,
+          productsCount: formatCollectionCount(
+            data.collectionAddProducts.collection.productsCount,
+          ),
+          title: data.collectionAddProducts.collection.title,
+        };
+
+        if (options.format === "json") {
+          printJson(result);
+          return;
+        }
+
+        printTable(
+          [
+            {
+              ...result,
+              addedProductIds: normalizedProductIds.join(", "),
+            },
+          ],
+          ["collectionId", "title", "handle", "productsCount", "addedProductIds"],
+        );
+      },
+    );
 }
 
 async function runCollectionsList(
@@ -481,6 +575,24 @@ export function normalizeCollectionId(input: string): string {
   }
 
   throw new Error("Expected a collection GID or numeric collection ID.");
+}
+
+export function normalizeCollectionProductIds(inputs: string[]): string[] {
+  if (inputs.length === 0) {
+    throw new Error("Pass at least one product GID or numeric product ID.");
+  }
+
+  return inputs.map((input) => {
+    if (input.startsWith("gid://shopify/Product/")) {
+      return input;
+    }
+
+    if (/^\d+$/.test(input)) {
+      return `gid://shopify/Product/${input}`;
+    }
+
+    throw new Error("Expected product GIDs or numeric product IDs.");
+  });
 }
 
 export function buildCollectionUpdateInput(
