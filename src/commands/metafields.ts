@@ -28,13 +28,16 @@ interface MetafieldItem {
 }
 
 interface MetafieldsListResponse {
-  metafields: {
-    edges: Array<{
-      cursor: string;
-      node: MetafieldItem;
-    }>;
-    pageInfo: PageInfo;
-  };
+  node: {
+    id: string;
+    metafields?: {
+      edges: Array<{
+        cursor: string;
+        node: MetafieldItem;
+      }>;
+      pageInfo: PageInfo;
+    };
+  } | null;
 }
 
 interface OwnerNodeWithMetafield {
@@ -337,26 +340,34 @@ async function runMetafieldsList(
       after: options.after ?? null,
       first: limit,
       namespace: normalizeOptionalNamespace(options.namespace),
-      owner: ownerId,
+      ownerId,
     },
   });
 
-  const rows = data.metafields.edges.map((edge) => edge.node);
+  if (!data.node) {
+    throw new Error(`Owner not found: ${ownerId}`);
+  }
+
+  if (!data.node.metafields) {
+    throw new Error(`Owner does not support metafields: ${ownerId}`);
+  }
+
+  const rows = data.node.metafields.edges.map((edge) => edge.node);
 
   if (options.format === "json") {
     printJson({
       items: rows,
       ownerId,
-      pageInfo: data.metafields.pageInfo,
+      pageInfo: data.node.metafields.pageInfo,
     });
     return;
   }
 
   printMetafieldsTable(rows, ownerId);
 
-  if (data.metafields.pageInfo.hasNextPage) {
+  if (data.node.metafields.pageInfo.hasNextPage) {
     process.stdout.write(
-      `${chalk.dim(`Next cursor: ${data.metafields.pageInfo.endCursor ?? ""}`)}\n`,
+      `${chalk.dim(`Next cursor: ${data.node.metafields.pageInfo.endCursor ?? ""}`)}\n`,
     );
   }
 }
