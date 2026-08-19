@@ -20,26 +20,26 @@ export const CURRENT_APP_INSTALLATION_ID_QUERY = `
 
 export const METAFIELDS_LIST_QUERY = `
   query MetafieldsList(
-    $owner: ID!,
+    $ownerId: ID!,
     $first: Int!,
     $after: String,
     $namespace: String
   ) {
-    metafields(
-      owner: $owner,
-      first: $first,
-      after: $after,
-      namespace: $namespace
-    ) {
-      edges {
-        cursor
-        node {
-          ${METAFIELD_FIELDS}
+    node(id: $ownerId) {
+      id
+      ... on HasMetafields {
+        metafields(first: $first, after: $after, namespace: $namespace) {
+          edges {
+            cursor
+            node {
+              ${METAFIELD_FIELDS}
+            }
+          }
+          pageInfo {
+            endCursor
+            hasNextPage
+          }
         }
-      }
-      pageInfo {
-        endCursor
-        hasNextPage
       }
     }
   }
