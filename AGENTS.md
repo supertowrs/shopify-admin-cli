@@ -89,7 +89,7 @@ Supported commands and capabilities:
 - support both `clientId/clientSecret` and `accessToken` in config
 - never print secrets in logs or tables
 - treat Shopify taxonomy categories as read-only references; product category edits should only assign, replace, filter, or clear the category on a product
-- keep publication selection explicit; list publication IDs before publishing a product to a sales channel
+- keep publication selection explicit; list Shopify-assigned publication names and IDs before publishing a product to a sales channel
 - keep analytics on `shopifyqlQuery` and read-only
 - do not introduce traffic, conversion, abandonment, marketing analytics, webhooks, or bulk operations unless explicitly requested
 
@@ -124,7 +124,7 @@ Correct clarity examples:
 - `products publish` must identify the required publication ID, product status precondition, and `write_publications` scope
 - `collections update` must make it clear that it accepts a collection GID or numeric ID and that changing the title does not change the handle automatically
 - `collections add-products` must state that it accepts GIDs or numeric IDs and only works with custom collections
-- `publications list` must mention `read_publications`, product read access for catalog metadata, and its relationship to `products publish`
+- `publications list` must return a human-readable publication name with each ID and mention `read_publications`, product read access for catalog metadata, and its relationship to `products publish`
 - `metafields get` and `metafields delete` must make it clear that they expect an owner GID plus a `namespace.key` identifier
 - `metafields set` must make it clear that `--entry` expects `namespace.key:type:value`
 - `metafields` commands must mention `--current-app-installation` when app-data metafields are relevant
