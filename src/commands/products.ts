@@ -25,6 +25,7 @@ import type {
   ProductVariantItem,
 } from "../types.js";
 import { printJson, printOutput, printTable } from "../utils/output.js";
+import { registerProductImportCommand } from "./product-import.js";
 import { normalizePublicationId } from "./publications.js";
 
 const PRODUCT_SORT_KEYS = [
@@ -275,6 +276,8 @@ export function registerProductCommands(program: Command): void {
   const products = program
     .command("products")
     .description("Read and modify product catalog data");
+
+  registerProductImportCommand(products);
 
   products
     .command("list")

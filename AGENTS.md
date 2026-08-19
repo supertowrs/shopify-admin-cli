@@ -25,6 +25,7 @@ Supported commands and capabilities:
 - `products list`
 - `products get`
 - `products search`
+- `products import`
 - `products create`
 - `products update`
 - `products publish`
@@ -120,6 +121,7 @@ Correct clarity examples:
 
 - `products get` must make it clear whether it accepts a GID, a numeric ID, or `--handle`
 - `products create` and `products update` must make it clear that `--category` expects a taxonomy category GID or raw taxonomy category ID
+- `products import` must document its JSON manifest, explicit handle requirement, public HTTPS image URLs, create-only behavior, `--dry-run`, and `--skip-existing`
 - product status help must include `unlisted` when the pinned Shopify API supports it
 - `products publish` must identify the required publication ID, product status precondition, and `write_publications` scope
 - `collections update` must make it clear that it accepts a collection GID or numeric ID and that changing the title does not change the handle automatically
