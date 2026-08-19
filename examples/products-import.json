@@ -1,0 +1,34 @@
+{
+  "products": [
+    {
+      "title": "Winter hat",
+      "handle": "winter-hat",
+      "descriptionHtml": "<p>Warm wool hat.</p>",
+      "vendor": "Pichardo",
+      "productType": "Hat",
+      "status": "draft",
+      "tags": ["winter", "hat"],
+      "images": [
+        {
+          "url": "https://cdn.example.com/grey-hat.jpg",
+          "alt": "Grey winter hat",
+          "filename": "grey-hat.jpg"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": ["Grey"]
+        }
+      ],
+      "variants": [
+        {
+          "optionValues": { "Color": "Grey" },
+          "sku": "HAT-GREY",
+          "price": "39.95",
+          "imageUrl": "https://cdn.example.com/grey-hat.jpg"
+        }
+      ]
+    }
+  ]
+}

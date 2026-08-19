@@ -12,6 +12,7 @@ Available commands and capabilities:
 - `products list`
 - `products get`
 - `products search`
+- `products import`
 - `products create`
 - `products update`
 - `products publish`
@@ -206,6 +207,7 @@ shopfleet products search "corona"
 shopfleet products get gid://shopify/Product/1234567890
 shopfleet products get 1234567890
 shopfleet products get paso-macarena-miniatura --handle
+shopfleet products import ./products.json --dry-run
 shopfleet products create --title "Test product" --status draft
 shopfleet products update 1234567890 --status unlisted
 shopfleet products update 1234567890 --category sg-4-17-2-17
@@ -276,6 +278,82 @@ shopfleet products list --query 'tag:"miniatura" status:active' --sort updated-a
 
 `products search` uses Shopify's default search and sorts by relevance.
 `products get` returns the basic product fields by default, including the current Shopify taxonomy category when one is assigned. Add `--include-media` to include `descriptionHtml`, up to 10 product images as URLs plus metadata, and detailed variant rows with `inventoryItemId` values.
+
+### Import a small product batch
+
+`products import` creates a small batch of products from one JSON manifest. It supports top-level product fields, public HTTPS images, and optional product options and variants. Every product requires an explicit unique handle containing lowercase letters, numbers, and single hyphens.
+
+Example `products.json` (also available at `examples/products-import.json`):
+
+```json
+{
+  "products": [
+    {
+      "title": "Winter hat",
+      "handle": "winter-hat",
+      "descriptionHtml": "<p>Warm wool hat.</p>",
+      "vendor": "Pichardo",
+      "productType": "Hat",
+      "category": "sg-4-17-2-17",
+      "status": "draft",
+      "tags": ["winter", "hat"],
+      "seo": {
+        "title": "Winter hat",
+        "description": "Warm wool hat for winter."
+      },
+      "images": [
+        {
+          "url": "https://cdn.example.com/grey-hat.jpg",
+          "alt": "Grey winter hat",
+          "filename": "grey-hat.jpg"
+        },
+        {
+          "url": "https://cdn.example.com/black-hat.jpg",
+          "alt": "Black winter hat"
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": ["Grey", "Black"]
+        }
+      ],
+      "variants": [
+        {
+          "optionValues": { "Color": "Grey" },
+          "sku": "HAT-GREY",
+          "price": "39.95",
+          "imageUrl": "https://cdn.example.com/grey-hat.jpg"
+        },
+        {
+          "optionValues": { "Color": "Black" },
+          "sku": "HAT-BLACK",
+          "price": "39.95",
+          "imageUrl": "https://cdn.example.com/black-hat.jpg"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Validate locally before contacting Shopify:
+
+```bash
+shopfleet products import ./products.json --dry-run
+```
+
+Then execute the import:
+
+```bash
+shopfleet products import ./products.json
+```
+
+The full manifest is validated before the first Shopify write. The command also checks every handle before creating anything and aborts when one already exists. Use `--skip-existing` to leave existing products unchanged and create only the missing handles, which makes a partially completed import safe to resume.
+
+Images must be available from public HTTPS URLs; local syntax validation doesn't confirm that Shopify can download them, and Shopify processes accepted URLs asynchronously after product creation. Local file uploads are not supported. Options and variants must either both be omitted or both describe the complete variant structure. Variant `imageUrl` values must match an entry in the product `images` list. The command accepts at most three options and 250 images, values, tags, or variants per product.
+
+Imports use two concurrent Shopify requests by default. Use `--concurrency 1` through `--concurrency 5` to change that bound. Products default to `draft`, and importing does not publish them to a sales channel. Use `products publish` explicitly after review.
 
 Write commands are also available:
 

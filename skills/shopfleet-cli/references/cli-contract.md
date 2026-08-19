@@ -47,6 +47,9 @@ Use command help to confirm exact input, but these rules are important:
 
 - `products get|update|publish|delete` accept a product GID or numeric product ID by default. Use `--handle` to treat the argument as a handle.
 - `products get --include-media` adds `descriptionHtml` and up to 10 product images with metadata. Without that flag, keep the response lightweight.
+- `products import` expects a JSON file with a non-empty `products` array. Every item requires an explicit unique lowercase handle using letters, numbers, and single hyphens, and images must use public HTTPS URLs.
+- `products import --dry-run` validates locally without resolving a store or contacting Shopify. Normal imports preflight all handles before the first write and refuse existing handles unless `--skip-existing` is set.
+- `products import` creates missing products only. It doesn't update, publish, or delete existing products, and it isn't implemented with Shopify Bulk Operations.
 - `products variants update` accepts a product variant GID or numeric variant ID.
 - `products list|search --category` accept a taxonomy category GID or raw taxonomy category ID and map it to Shopify's `category_id` search filter.
 - `products create|update --category` accept a taxonomy category GID or raw taxonomy category ID.
@@ -78,6 +81,7 @@ Use command help to confirm exact input, but these rules are important:
 These commands mutate Shopify data and should be treated as real store operations:
 
 - `products create`
+- `products import`
 - `products update`
 - `products publish`
 - `products variants update`
@@ -104,6 +108,7 @@ Notes:
 - `collections update` changes live storefront/admin collection metadata and should be treated like a real catalog edit.
 - `collections add-products` changes live custom collection membership. Shopify rejects the full request if any supplied product is already a member.
 - `products publish` makes an active product available on the selected sales channel publication.
+- `products import` defaults omitted product statuses to `DRAFT`, creates products with optional variants and public HTTPS images, and reports each product as created, skipped, or failed. A partial failure exits non-zero after printing the complete summary.
 - Product categories come from Shopify taxonomy and are assigned to products; the CLI does not create or edit taxonomy categories themselves.
 - `products variants update` splits writes between product variant fields and the linked inventory item when needed.
 - `discounts create` requires exactly one of `--percentage` or `--amount`.
