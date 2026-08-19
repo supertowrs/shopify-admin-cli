@@ -305,7 +305,7 @@ Inventory quantity changes live under the dedicated `inventory` command group.
 
 ## Publications
 
-`publications list` returns the sales channel publications visible to the configured Shopify app, including their GIDs. Use the target publication GID with `products publish`.
+`publications list` returns the sales channel publications visible to the configured Shopify app, including each Shopify-assigned publication name, GID, and available catalog metadata. Use the human-readable name to identify a channel such as Online Store, then pass its publication GID to `products publish`.
 
 ```bash
 shopfleet publications list

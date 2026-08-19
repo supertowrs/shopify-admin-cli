@@ -16,6 +16,7 @@ interface PublicationListItem {
     title: string;
   } | null;
   id: string;
+  name: string;
   supportsFuturePublishing: boolean;
 }
 
@@ -50,14 +51,14 @@ export function registerPublicationCommands(program: Command): void {
       "after",
       `
 Context:
-  Lists publication IDs and their associated catalog metadata for channel-specific publishing.
+  Lists Shopify-assigned publication names, IDs, and catalog metadata for channel-specific publishing.
 
 Examples:
   shopfleet publications list
   shopfleet publications list --limit 50 --format json
 
 Notes:
-  Publication IDs identify sales channels such as Hydrogen or Online Store.
+  Use the publication name to identify sales channels such as Hydrogen or Online Store.
   Use a returned publication ID with products publish --publication.
   The configured Shopify app requires read_publications. Catalog metadata also requires product read access, which write_products includes.
   Pagination is manual. Reuse the returned cursor with --after.
@@ -87,6 +88,7 @@ Notes:
         catalogType: edge.node.catalog?.__typename ?? "",
         futurePublishing: edge.node.supportsFuturePublishing,
         id: edge.node.id,
+        name: edge.node.name,
       }));
 
       if (options.format === "json") {
@@ -98,6 +100,7 @@ Notes:
       }
 
       printOutput(options.format, rows, [
+        "name",
         "id",
         "catalogTitle",
         "catalogType",

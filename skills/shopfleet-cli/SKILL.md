@@ -80,7 +80,7 @@ Prefer `--format table` when you want concise terminal inspection and `--format 
 - Shopify taxonomy categories are read-only references from Shopify; product commands may assign, filter, or clear a product category, but they do not mutate the taxonomy itself.
 - Collection title changes do not change the handle automatically; handle updates should be explicit and may optionally request a redirect.
 - Product status supports `UNLISTED` on the pinned Admin API. Publishing a product requires active status, a publication ID, and `write_publications`.
-- Listing publications requires `read_publications`, while its catalog metadata also needs product read access. Explicit collection membership changes only work for custom collections and require `write_products`.
+- Listing publications returns each Shopify-assigned publication name with its ID so users can identify channels such as Online Store. It requires `read_publications`, while its catalog metadata also needs product read access. Explicit collection membership changes only work for custom collections and require `write_products`.
 - The config layer normalizes domains and requires the Shopify admin domain in `*.myshopify.com` format.
 
 ## Editing Workflow

@@ -54,7 +54,7 @@ Use command help to confirm exact input, but these rules are important:
 - `products update --delete-conflicting-metafields` is only valid when the category is changing or being cleared.
 - `products create|update` accept optional `--seo-title` and `--seo-description` values that map to Shopify product SEO fields.
 - `products create|update --status` accept `active`, `draft`, `archived`, or `unlisted`.
-- `products publish --publication` accepts a publication GID or numeric publication ID returned by `publications list`.
+- `products publish --publication` accepts a publication GID or numeric publication ID returned with its human-readable publication name by `publications list`.
 - `orders get|transactions|cancel` accept an order GID or numeric order ID.
 - `customers get|orders` accept a customer GID or numeric customer ID.
 - `gift-cards get` accepts a gift card GID or numeric ID.
@@ -62,7 +62,7 @@ Use command help to confirm exact input, but these rules are important:
 - `collections update` edits top-level collection fields such as title, HTML description, handle, SEO, sort order, and template suffix.
 - `collections update --redirect-new-handle` is only valid when `--handle` is also present.
 - `collections add-products` accepts one or more product GIDs or numeric product IDs and only works with custom collections.
-- `publications list` requires `read_publications` plus product read access for catalog metadata; `products publish` requires `write_publications`.
+- `publications list` returns each Shopify-assigned publication name and ID. It requires `read_publications` plus product read access for catalog metadata; `products publish` requires `write_publications`.
 - `inventory adjust --item-id` expects an inventory item GID or numeric ID.
 - `inventory adjust --location-id` expects a location GID or numeric ID.
 - `inventory set --item-id` expects an inventory item GID or numeric ID.
