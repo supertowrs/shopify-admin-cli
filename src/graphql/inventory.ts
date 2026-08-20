@@ -112,8 +112,8 @@ export const INVENTORY_SET_MUTATION = `
     $input: InventorySetQuantitiesInput!,
     $quantityNames: [String!],
     $idempotencyKey: String!
-  ) @idempotent(key: $idempotencyKey) {
-    inventorySetQuantities(input: $input) {
+  ) {
+    inventorySetQuantities(input: $input) @idempotent(key: $idempotencyKey) {
       inventoryAdjustmentGroup {
         id
         createdAt
